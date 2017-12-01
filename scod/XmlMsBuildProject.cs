@@ -75,7 +75,6 @@ namespace scod
                     ?.Split(";")
                     ?.Select(tf => tf.Trim())
                     ?? new List<string>();
-
             }
         }
 
@@ -105,7 +104,23 @@ namespace scod
                 GetPropertyValue(
                     "PlatformTarget",
                     GetPropertyGroups($"{configuration}|{platform}")) 
-                ?? platform;
+                ?? "AnyCPU";
+        }
+
+        /// <summary>
+        /// Gets the OutputPath property for the project in the specified configuration.
+        /// </summary>
+        /// <remarks>
+        /// It is assumed that this property is defined only in property groups whose conditions
+        /// specify a complete and unique proejct configuration. If this assumptions is untrue then
+        /// the reported value may not match what MSBuild uses when the project is evaluated.
+        /// </remarks>
+        public string GetOutputPath(string configuration, string platform)
+        {
+            return
+                   GetPropertyValue(
+                       "OutputPath",
+                       GetPropertyGroups($"{configuration}|{platform}"));
         }
 
         private string GetPropertyValue(string propertyName, IEnumerable<XElement> propertyGroups)

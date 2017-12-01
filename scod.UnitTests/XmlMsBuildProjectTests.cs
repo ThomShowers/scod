@@ -142,7 +142,7 @@ namespace scod.UnitTests
         [InlineData("AnyCPU")]
         [InlineData("x86")]
         [InlineData("x64")]
-        public void Default_PlatformTarget_Is_Configuration_Platform(string platform)
+        public void Default_PlatformTarget_Is_Configuration_AnyCPU(string platform)
         {
             var projectXml =
                    "<Project Sdk=\"Microsoft.NET.Sdk\">" +
@@ -153,7 +153,7 @@ namespace scod.UnitTests
 
             var projectContent = XDocument.Load(new StringReader(projectXml));
             var project = new XmlMsBuildProject(projectContent);
-            Assert.Equal(platform, project.GetPlatformTarget("Debug", platform));
+            Assert.Equal("AnyCPU", project.GetPlatformTarget("Debug", platform));
         }
 
         [Theory]
@@ -167,16 +167,62 @@ namespace scod.UnitTests
                            "<TargetFramework>netcoreapp2.0</TargetFramework>" +
                        "</PropertyGroup>" +
                        "<PropertyGroup " +
-                                "Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">" +
+                                $"Condition=\" '$(Configuration)|$(Platform)' == 'Debug|{platform}' \">" +
                            $"<PlatformTarget>{platform}</PlatformTarget>" +
                        "</PropertyGroup>" +
                    "</Project>";
 
             var projectContent = XDocument.Load(new StringReader(projectXml));
             var project = new XmlMsBuildProject(projectContent);
-            Assert.Equal(platform, project.GetPlatformTarget("Debug", "AnyCPU"));
+            Assert.Equal(platform, project.GetPlatformTarget("Debug", platform));
         }
 
-        
+        [Fact]
+        public void Default_OutputPath_Is_Null()
+        {
+            var projectXml =
+                   "<Project Sdk=\"Microsoft.NET.Sdk\">" +
+                       "<PropertyGroup>" +
+                           "<TargetFramework>netcoreapp2.0</TargetFramework>" +
+                       "</PropertyGroup>" +
+                   "</Project>";
+
+            var projectContent = XDocument.Load(new StringReader(projectXml));
+            var project = new XmlMsBuildProject(projectContent);
+            Assert.Null(project.GetOutputPath("Debug", "AnyCPU"));
+        }
+
+        [Theory]
+        [InlineData("AnyCPU")]
+        [InlineData("x86")]
+        [InlineData("x64")]
+        public void OutputPath_Is_Correct(string platform)
+        {
+            var projectXml =
+                   "<Project Sdk=\"Microsoft.NET.Sdk\">" +
+                       "<PropertyGroup>" +
+                           "<TargetFramework>netcoreapp2.0</TargetFramework>" +
+                       "</PropertyGroup>" +
+                       "<PropertyGroup " +
+                                "Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">" +
+                           $"<OutputPath>bin\\Debug</OutputPath>" +
+                       "</PropertyGroup>" +
+                       "<PropertyGroup " +
+                                "Condition=\" '$(Configuration)|$(Platform)' == 'Debug|x86' \">" +
+                           $"<OutputPath>bin\\Debug\\x86</OutputPath>" +
+                       "</PropertyGroup>" +
+                       "<PropertyGroup " +
+                                "Condition=\" '$(Configuration)|$(Platform)' == 'Debug|x64' \">" +
+                           $"<OutputPath>bin\\Debug\\x64</OutputPath>" +
+                       "</PropertyGroup>" +
+                   "</Project>";
+
+            var projectContent = XDocument.Load(new StringReader(projectXml));
+            var project = new XmlMsBuildProject(projectContent);
+            var expectedOutputPath = "bin\\Debug";
+            if (platform != "AnyCPU") { expectedOutputPath += $"\\{platform}"; }
+            Assert.Equal(expectedOutputPath, project.GetOutputPath("Debug", platform));
+        }
+
     }
 }
